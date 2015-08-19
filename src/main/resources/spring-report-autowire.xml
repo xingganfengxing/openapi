@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans" xmlns:task="http://www.springframework.org/schema/task" xmlns:tx="http://www.springframework.org/schema/tx" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:context="http://www.springframework.org/schema/context" xmlns:mvc="http://www.springframework.org/schema/mvc" xmlns:aop="http://www.springframework.org/schema/aop" xsi:schemaLocation="http://www.springframework.org/schema/beans
+	   http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+	   http://www.springframework.org/schema/context
+	   http://www.springframework.org/schema/context/spring-context-3.0.xsd
+	   http://www.springframework.org/schema/tx
+	   http://www.springframework.org/schema/tx/spring-tx-3.0.xsd
+	   http://www.springframework.org/schema/aop
+	   http://www.springframework.org/schema/aop/spring-aop-3.0.xsd
+	   http://www.springframework.org/schema/mvc
+	   http://www.springframework.org/schema/mvc/spring-mvc.xsd
+	   http://www.springframework.org/schema/task
+       http://www.springframework.org/schema/task/spring-task-3.0.xsd">
+    <!-- 数据库配置 -->
+    <tx:annotation-driven transaction-manager="transactionManagerReport" />
+    
+    <bean id="dataSourceReport" class="org.apache.commons.dbcp.BasicDataSource">
+        <property name="driverClassName" value="com.mysql.jdbc.Driver"></property>
+        <property name="url" value="${report.mysql.url}"></property>
+        <property name="username" value="${report.mysql.username}"></property>
+        <property name="password" value="${report.mysql.password}"></property>
+        <property name="maxActive" value="50"></property>
+        <property name="maxIdle" value="50"></property>
+        <property name="maxWait" value="100"></property>
+        <property name="defaultAutoCommit" value="false"></property>
+        <!-- 活动连接的最大空闲时间 ，超过时间限制，回收没有用(废弃)的连接-->
+		<property name="removeAbandonedTimeout" value="28000" />
+		<!-- 是否清理removeAbandonedTimeout秒没有使用的活动连接，清理后并没有放回连接池。 -->
+		<property name="removeAbandoned" value="true" />
+		<property name="timeBetweenEvictionRunsMillis" value="20000"/>
+		
+		<!-- 这个值要小于mysql中的 'wait_timeout' 28800秒 -->
+		<!-- dbcp默认是30分，需要开启异步线程Evict，否则不生效。
+			原理很简单，就是通过一个异步线程，每次检查connnection上一次使用的时间戳，
+			看看是否已经超过这个timeout时间设置。 -->
+		<property name="minEvictableIdleTimeMillis" value="28000"/>
+		<!-- 代表每次检查链接的数量，建议设置和maxActive一样大，这样每次可以有效检查所有的链接. -->
+		<property name="numTestsPerEvictionRun" value="100"/>
+    </bean>
+    <bean id="sqlSessionFactoryReport" class="org.mybatis.spring.SqlSessionFactoryBean">
+        <property name="dataSource" ref="dataSourceReport" />
+        <property name="configLocation" value="classpath:MyBatis-Configuration-report.xml" />
+        <property name="mapperLocations" value="classpath:mybatisXml/report/*.xml" />
+    </bean>
+    <bean name="transactionManagerReport" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+        <property name="dataSource" ref="dataSourceReport"></property>
+    </bean>
+    <bean name="mapperScannerConfigurerReport" class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+        <property name="basePackage" value="com.letv.cdn.openapi.dao.report" />
+        <property name="sqlSessionFactory" ref="sqlSessionFactoryReport" />
+    </bean>
+</beans>
